@@ -1,8 +1,12 @@
 const specSelector = document.getElementById("spec");
 const algos = document.getElementById("algos");
 
-const { results } = await (await fetch("./index.json")).json();
-const algoUrls = new Set(await (await fetch("./dfns.json")).json());
+const webrefBase = "https://w3c.github.io/webref/ed/algorithms/";
+
+const { results } = await (await fetch(webrefBase + "index.json")).json();
+// TODO: set up GH action to update regularly list of algorithms URLs
+// jq -s '[.[].algorithms[]|.href]' webref/ed/algorithms/*.json > algo-urls.json
+const algoUrls = new Set(await (await fetch("./algo-urls.json")).json());
 
 specSelector.addEventListener("change", showSpec);
 
@@ -168,7 +172,7 @@ async function showSpec(e) {
 
   const specShortname = specSelector.children[specSelector.selectedIndex].dataset.spec;
   history.pushState({}, "", "?s=" + specShortname);
-  const { algorithms } = await (await fetch(e.target.value)).json();
+  const { algorithms } = await (await fetch(webrefBase + e.target.value)).json();
   algos.innerHTML = "";
   for (const a of algorithms) {
     const section = document.createElement("section");
