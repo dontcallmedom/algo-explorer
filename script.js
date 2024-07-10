@@ -95,6 +95,9 @@ function showAlgo(a, level = 0, parallel = false) {
     if (level > 0 && algoUrls.intersection(linkUrls).size > 0) {
       symbols.push("invoke");
     }
+    if (level > 0 && text.startsWith("assert:")) {
+      symbols.push("assert");
+    }
 
     if (level > 0 && text.includes("return")) {
       symbols.push("return");
@@ -117,6 +120,9 @@ function showAlgo(a, level = 0, parallel = false) {
 	break;
       case "invoke":
 	sym = "▥";
+	break;
+      case "assert":
+	sym = "✅";
 	break;
       case "return":
 	sym = "⏎";
