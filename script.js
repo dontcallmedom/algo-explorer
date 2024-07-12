@@ -22,6 +22,29 @@ results.sort((a,b) => a.title.localeCompare(b.title)).forEach(s => {
   }
 });
 
+const typeToSymbol = type => {
+  switch(type) {
+  case "init":
+    return "⬡";
+    break;
+  case "condition":
+    return "◇";
+    break;
+  case "jump":
+    return "⏩";
+    break;
+  case "invoke":
+    return "▥";
+    break;
+  case "assert":
+    return "✅";
+    break;
+  case "return":
+    return "⏎";
+    break;
+  }
+};
+
 const m = window.location.search.match(/\?s=(.+)$/);
 if (m) {
   const spec = m[1];
@@ -31,9 +54,6 @@ if (m) {
 
 let contextualParallel;
 function showAlgo(a, substep = false) {
-  if (!substep) {
-    a = annotateAlgorithm(a, algoUrls);
-  }
   const ret = [];
   if (!substep) {
     const heading = document.createElement("h2");
@@ -59,28 +79,7 @@ function showAlgo(a, substep = false) {
       const span = document.createElement("span");
       span.className = type;
       span.classList.add("step-type");
-      let sym;
-      switch(type) {
-      case "init":
-	sym = "⬡";
-	break;
-      case "condition":
-	sym = "◇";
-	break;
-      case "jump":
-	sym = "⏩";
-	break;
-      case "invoke":
-	sym = "▥";
-	break;
-      case "assert":
-	sym = "✅";
-	break;
-      case "return":
-	sym = "⏎";
-	break;
-      }
-      span.textContent = sym;
+      span.textContent = typeToSymbol(type);
       intro.prepend(span);
     });
     ret.push(intro);
@@ -132,8 +131,9 @@ async function showSpec(e) {
   const { algorithms } = await (await fetch(webrefBase + e.target.value)).json();
   algos.innerHTML = "";
   for (const a of algorithms) {
+    const annotatedAlgo = annotateAlgorithm(a, algoUrls);;
     const section = document.createElement("section");
-    section.append(...showAlgo(a));
+    section.append(...showAlgo(annotatedAlgo));
     algos.append(section);
   }
 }
