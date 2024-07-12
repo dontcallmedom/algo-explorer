@@ -3,7 +3,7 @@ import annotateAlgorithm from "./lib/annotate-algo.mjs";
 const specSelector = document.getElementById("spec");
 const algos = document.getElementById("algos");
 
-const webrefBase = "https://w3c.github.io/webref/ed/algorithms/";
+const webrefBase = "https://w3c.github.io/webref/ed/";
 
 const { results } = await (await fetch(webrefBase + "index.json")).json();
 // TODO: set up GH action to update regularly list of algorithms URLs
