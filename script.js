@@ -1,3 +1,5 @@
+import annotateAlgorithm from "./lib/annotate-algo.mjs";
+
 const specSelector = document.getElementById("spec");
 const algos = document.getElementById("algos");
 
@@ -28,12 +30,12 @@ if (m) {
 }
 
 let contextualParallel;
-function showAlgo(a, level = 0, parallel = false) {
-  if (level === 0 || level < contextualParallel) {
-    contextualParallel = undefined;
+function showAlgo(a, substep = false) {
+  if (!substep) {
+    a = annotateAlgorithm(a, algoUrls);
   }
   const ret = [];
-  if (level === 0) {
+  if (!substep) {
     const heading = document.createElement("h2");
     if (a.name) {
       if (a.href) {
@@ -45,65 +47,15 @@ function showAlgo(a, level = 0, parallel = false) {
 	heading.textContent = a.name;
       }
     } else {
-      heading.textContent = "(unnamed algorithm)";
+    heading.textContent = "(unnamed algorithm)";
     }
     ret.push(heading);
   }
-  let embedParallel = false;
-  let remainingParallel = false;
-  let thread = "main";
-  const symbols = [];
   if (a.html) {
     const intro = document.createElement("div");
     intro.innerHTML = a.html;
-    // duplicate content
-    if (intro.children[0]?.tagName === "OL") {
-      intro.innerHTML = "";
-    }
-    const linkUrls = new Set([...intro.querySelectorAll("a[href]")].map(n => n.href));
-    const text = intro.textContent.toLowerCase().trim()
-	  .replace(/^([a-z]+:) /, '')
-    ;
-    remainingParallel = (text.includes("remaining steps") || text.includes("remainder") || text.includes("continue running")) && text.includes("in parallel") && (level > 0 || (level === 0 && !text.includes(" synchronous")));
-    if (remainingParallel) {
-      contextualParallel = level;
-    }
-    embedParallel = !remainingParallel && text.includes("in parallel");
 
-    thread = embedParallel || parallel || contextualParallel >= level ? "parallel" : "main";
-
-    if ((level === 0 && text.includes(" synchronous")) || text.startsWith("⌛")) {
-      thread = "main";
-    }
-    if ((text.includes("queue") && text.includes("task")) || text.includes("await a stable state")) {
-      thread = "queued";
-    }
-
-    if (embedParallel || remainingParallel) {
-      intro.classList.add("invoke-parallel");
-    }
-
-    if (level > 0 && (text.startsWith("let") || text.includes(". let"))) {
-      symbols.push("init");
-    }
-    if (level > 0 && (text.startsWith("if") || text.startsWith("otherwise") || text.startsWith("while"))) {
-      symbols.push("condition");
-    }
-    if (level > 0 && (text.includes("jump") && text.includes("step") || text.includes("break"))) {
-      symbols.push("jump");
-    }
-    if (level > 0 && algoUrls.intersection(linkUrls).size > 0) {
-      symbols.push("invoke");
-    }
-    if (level > 0 && text.startsWith("assert:")) {
-      symbols.push("assert");
-    }
-
-    if (level > 0 && text.includes("return")) {
-      symbols.push("return");
-    }
-    intro.dataset.comment =  `${level}, ${contextualParallel}, ${parallel}`;
-    symbols.toReversed().forEach(type => {
+    (a.types?.toReversed() || []).forEach(type => {
       const span = document.createElement("span");
       span.className = type;
       span.classList.add("step-type");
@@ -135,15 +87,14 @@ function showAlgo(a, level = 0, parallel = false) {
   }
   if (a.steps) {
     const container = document.createElement(a.operation === "switch" ? "dl" : "ol");
-    container.className = "level" + level;
     for (const step of a.steps) {
       if (step.case) {
 	const dt = document.createElement("dt");
 	dt.innerHTML = step.case;
 	const dd = document.createElement("dd");
-	dd.append(...showAlgo(step, level + 1, parallel || embedParallel));
-	dd.classList.add(thread);
-	dt.className = thread;
+	dd.append(...showAlgo(step, true));
+	dd.classList.add(step.thread);
+	dt.className = step.thread;
 	const span = document.createElement("span");
 	span.className = "condition";
 	span.textContent = "◇";
@@ -151,18 +102,18 @@ function showAlgo(a, level = 0, parallel = false) {
 	container.append(dt, dd);
       } else {
 	const li = document.createElement("li");
-	li.className = thread;
-	li.append(...showAlgo(step, level + 1, parallel || embedParallel));
+	li.className = step.thread;
+	li.append(...showAlgo(step, true));
 	container.append(li);
       }
     }
     ret.push(container);
   }
-  const additional = a.additional ?? a.additionalAlgorithms;
+  const additional = a.additional;
   if (additional) {
     const div = document.createElement("div");
     div.className = "additional";
-    div.append("Additional:", ...additional.map(aa => showAlgo(aa, level +1)).flat());
+    div.append("Additional:", ...additional.map(aa => showAlgo(aa, true)).flat());
     ret.push(div);
   }
   if (a.ignored) {
